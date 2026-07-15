@@ -9,7 +9,6 @@ from typing import defaultdict
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'common'))
 
 from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
-from aiokafka.errors import KafkaError
 import asyncpg
 
 from config import (
@@ -21,7 +20,6 @@ from storage import (
     insert_telemetry,
     insert_failure,
     update_last_seen,
-    upsert_device_status,
     mark_devices_disconnected,
 )
 from analyser import Analyser
@@ -50,11 +48,15 @@ class TelemetryConsumer:
         self._producer = AIOKafkaProducer(
             bootstrap_servers=REDPANDA_BROKERS,
             value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+            key_serializer=lambda k: k.encode("utf-8") if k else None,
+            acks="all",
+            retry_backoff_ms=200,
+            request_timeout_ms=10_000,
         )
         await self._consumer.start()
         await self._producer.start()
         logger.info(
-            "Consumer started | brokers=%s | topics=%s",
+            "Consumer and Producer started | brokers=%s | topics=%s",
             REDPANDA_BROKERS, TOPICS,
         )
 
@@ -120,7 +122,7 @@ class TelemetryConsumer:
             return
 
         # ── Step 4: Anomaly detection ─────────────────────────────────────────
-        anomalies = self.analyser.analyse(
+        anomalies = await asyncio.to_thread(self.analyser.analyse,
             device_id=reading.device_id,
             device_type=reading.device_type,
             timestamp=reading.timestamp,
@@ -148,7 +150,6 @@ class TelemetryConsumer:
         For each metric in a clean reading, check if there's
         an active alert for it that can now be resolved.
         """
-        import asyncpg
         async with self.pool.acquire() as conn:
             active = await conn.fetch(
                 """

@@ -2,10 +2,6 @@
 import asyncio
 import logging
 import signal
-import sys
-import os
-
-sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'common'))
 
 from storage import create_pool
 from consumer import TelemetryConsumer, run_watchdog

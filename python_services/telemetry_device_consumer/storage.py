@@ -35,7 +35,7 @@ async def create_pool() -> asyncpg.Pool:
 async def insert_telemetry(
     pool: asyncpg.Pool,
     reading: EnrichedReading,
-) -> None:
+) -> bool:
     """Insert a single enriched reading into the telemetry hypertable."""
     import json
     result = None
@@ -57,7 +57,7 @@ async def insert_telemetry(
             json.dumps(reading.metrics),
             reading.scenario,
         )
-    return result != "INSERT 0"
+    return result == "INSERT 0 1"
 
 
 # ── Device status ─────────────────────────────────────────────────────────────

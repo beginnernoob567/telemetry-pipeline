@@ -385,7 +385,7 @@ class Analyser:
 
         return AnomalyResult(
             device_id=device_id,
-            metric=", ".join(top_metrics),
+            metric="isolation_forest",
             value=score,
             severity="WARNING",
             detection_layer="isolation_forest",
