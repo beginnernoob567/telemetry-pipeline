@@ -166,4 +166,4 @@ def _fmt_time(ts) -> str:
         return "—"
     if hasattr(ts, "strftime"):
         return ts.strftime("%H:%M:%S")
-    return
+    return str(ts)

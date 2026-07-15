@@ -2,7 +2,7 @@
 import random
 import time
 from config import METRIC_RANGES, DEGRADATION, SPIKE, DROPOUT
-
+from datetime import datetime, timezone
 
 def _device_type(device_id: str) -> str:
     return device_id.split("_")[2]  # IN_BLR_CHIL_01 → CHIL
@@ -18,6 +18,31 @@ def _baseline(device_type: str) -> dict:
         value = round(max(low * 0.95, min(high * 1.05, value)), 2)
         metrics[metric] = value
     return metrics
+
+def _malformed_baseline(device_type: str) -> dict:
+    """Generate a malformed payload — rotates through different failure types."""
+    kind = random.randint(0, 2)
+    malformed_metrics = {}
+    if kind == 0:
+        # missing metrics key entirely
+        return {
+            "_malformed": {
+                "device_id": f"IN_BLR_{device_type}_07",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+            }
+        }
+    elif kind == 1:
+        # device_id fails format check
+        return {
+            "_malformed": {
+                "device_id": "BADFORMAT",
+                "timestamp": datetime.now(timezone.utc).isoformat(),
+                "metrics":   _baseline(device_type),
+            }
+        }
+    else:
+        # not valid JSON structure
+        return {"_malformed": "__NOTJSON__"}
 
 
 class ScenarioState:
@@ -124,3 +149,6 @@ class ScenarioState:
         metrics = _baseline(self.device_type)
         metrics["_duplicate"] = True
         return metrics
+
+    def _scenario_malformed(self) -> dict:
+        return _malformed_baseline(self.device_type)

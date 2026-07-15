@@ -59,6 +59,42 @@ async def insert_telemetry(
 
 # ── Device status ─────────────────────────────────────────────────────────────
 
+async def update_last_seen(
+    pool:        asyncpg.Pool,
+    device_id:   str,
+    device_type: str,
+    now:         datetime | None = None,
+) -> None:
+    """
+    Record that a device is still alive without changing its status.
+
+    Called on every valid reading (Step 3 of the consume pipeline).
+    Deliberately does NOT overwrite `status` — so an "unhealthy" or
+    "disconnected" device stays in that state until the alert or watchdog
+    explicitly resolves it.
+
+    On first sight of a device, inserts a 'healthy' row so the dashboard
+    can display it immediately.
+    """
+    now = now or datetime.now(timezone.utc)
+
+    async with pool.acquire() as conn:
+        await conn.execute(
+            """
+            INSERT INTO device_status
+                (device_id, device_type, status, since, last_seen)
+            VALUES ($1, $2, 'healthy', $3, $3)
+            ON CONFLICT (device_id) DO UPDATE SET
+                last_seen   = EXCLUDED.last_seen,
+                device_type = EXCLUDED.device_type
+                -- status and since are intentionally left unchanged
+            """,
+            device_id,
+            device_type,
+            now,
+        )
+
+
 async def upsert_device_status(
     pool:        asyncpg.Pool,
     device_id:   str,

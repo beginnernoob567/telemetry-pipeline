@@ -24,6 +24,7 @@ FLEET = [
     ("IN_BLR_CHIL_04", "healthy"),
     ("IN_BLR_CHIL_05", "sensor_dropout"),
     ("IN_BLR_CHIL_06", "out_of_order"),
+    ("IN_BLR_CHIL_07", "malformed"),
 
     # Pump-motors
     ("IN_BLR_PUMO_01", "healthy"),
@@ -67,13 +68,13 @@ SPIKE = {
     "CHIL": {
         "metric":       "coolant_pressure_psi",
         "spike_value":  170.0,       # well above 140 threshold
-        "duration_ticks": 2,
+        "duration_ticks": 30,
         "every_ticks":  300,         # spike every ~60 seconds
     },
     "PUMO": {
         "metric":       "vibration_rms_mm_s",
         "spike_value":  9.5,
-        "duration_ticks": 2,
+        "duration_ticks": 30,
         "every_ticks":  300,
     },
 }

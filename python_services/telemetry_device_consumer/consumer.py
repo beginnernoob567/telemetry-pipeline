@@ -3,10 +3,12 @@ import asyncio
 import logging
 import sys
 import os
+import json
+from typing import defaultdict
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'common'))
 
-from aiokafka import AIOKafkaConsumer
+from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
 from aiokafka.errors import KafkaError
 import asyncpg
 
@@ -18,6 +20,7 @@ from validator import validate
 from storage import (
     insert_telemetry,
     insert_failure,
+    update_last_seen,
     upsert_device_status,
     mark_devices_disconnected,
 )
@@ -32,6 +35,8 @@ class TelemetryConsumer:
         self.pool     = pool
         self.analyser = Analyser()
         self._consumer: AIOKafkaConsumer | None = None
+        self._producer: AIOKafkaProducer | None = None
+        self._clean_streak: dict[str, int] = defaultdict(int)
 
     async def start(self):
         self._consumer = AIOKafkaConsumer(
@@ -42,7 +47,12 @@ class TelemetryConsumer:
             auto_offset_reset="earliest",
             value_deserializer=lambda v: v, # raw bytes — we decode in validator
         )
+        self._producer = AIOKafkaProducer(
+            bootstrap_servers=REDPANDA_BROKERS,
+            value_serializer=lambda v: json.dumps(v).encode("utf-8"),
+        )
         await self._consumer.start()
+        await self._producer.start()
         logger.info(
             "Consumer started | brokers=%s | topics=%s",
             REDPANDA_BROKERS, TOPICS,
@@ -52,6 +62,9 @@ class TelemetryConsumer:
         if self._consumer:
             await self._consumer.stop()
             logger.info("Consumer stopped")
+        if self._producer:
+            await self._producer.stop()
+            logger.info("Producer stopped")
 
     async def run(self):
         """Main consume loop — runs indefinitely."""
@@ -76,12 +89,16 @@ class TelemetryConsumer:
         result = validate(raw)
 
         if not result.is_valid:
-            logger.error(
-                "Invalid message on topic=%s | reason=%s",
-                message.topic, result.failure.error_reason,
-            )
             await insert_failure(self.pool, result.failure)
-            # commit even for bad messages — don't replay poison pills
+            await self._producer.send_and_wait(
+                "telemetry.failures",
+                value={
+                    "raw_payload":   raw.decode("utf-8", errors="replace"),
+                    "error_reason":  result.failure.error_reason,
+                    "source_topic":  message.topic,
+                    "source_offset": message.offset,
+                }
+            )
             await self._consumer.commit()
             return
 
@@ -99,11 +116,14 @@ class TelemetryConsumer:
             return
 
         # ── Step 3: Update device last_seen ───────────────────────────────────
-        await upsert_device_status(
+        # Use update_last_seen, NOT upsert_device_status("healthy").
+        # We must not reset an "unhealthy" or "disconnected" status here —
+        # that would mask alerts on every incoming reading before anomaly
+        # detection (Step 4) gets a chance to re-flag the device.
+        await update_last_seen(
             pool=self.pool,
             device_id=reading.device_id,
             device_type=reading.device_type,
-            status="healthy",
             now=reading.timestamp,
         )
 
@@ -124,9 +144,9 @@ class TelemetryConsumer:
                 anomalies=anomalies,
             )
         else:
-            # no anomalies — check if we can resolve existing alerts
-            # for metrics that have returned to normal
-            await self._check_resolutions(reading)
+            self._clean_streak[reading.device_id] += 1
+            if self._clean_streak[reading.device_id] >= 3:
+                await self._check_resolutions(reading)
 
         # ── Step 6: Commit offset ─────────────────────────────────────────────
         # only reached if write + analysis both succeeded

@@ -8,6 +8,8 @@ from dataclasses import dataclass, field
 from collections import defaultdict
 from datetime import datetime, timezone
 
+from config import ISOLATION_FOREST_MIN_READINGS, ISOLATION_FOREST_RETRAIN_EVERY
+
 logger = logging.getLogger(__name__)
 
 # ── Thresholds ────────────────────────────────────────────────────────────────
@@ -33,8 +35,8 @@ ZSCORE_MIN_READINGS  = 10     # minimum readings before z-score is meaningful
 CONSECUTIVE_REQUIRED = 2      # consecutive anomalous readings before alert fires
 
 # ── Isolation Forest config ───────────────────────────────────────────────────
-IF_MIN_READINGS      = 50     # minimum readings before model is trained
-IF_RETRAIN_EVERY     = 100    # retrain after this many new readings
+IF_MIN_READINGS      = ISOLATION_FOREST_MIN_READINGS   # from config / .env
+IF_RETRAIN_EVERY     = ISOLATION_FOREST_RETRAIN_EVERY  # from config / .env
 IF_CONTAMINATION     = 0.05   # expected proportion of anomalies in training data
 
 

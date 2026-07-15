@@ -2,7 +2,6 @@
 import asyncio
 import logging
 import random
-import time
 from datetime import datetime, timezone
 
 from config import BASE_TICK_MS, JITTER_MS
@@ -10,6 +9,12 @@ from producer import TelemetryProducer
 from scenarios import ScenarioState
 
 logger = logging.getLogger(__name__)
+
+def _device_type(device_id: str) -> str:
+    parts = device_id.split("_")
+    if len(parts) < 3:
+        raise ValueError(f"Invalid device_id format: {device_id}")
+    return parts[2]
 
 def _build_payload(
     device_id: str,
@@ -46,7 +51,7 @@ async def simulate_device(
     Tick interval = BASE_TICK_MS ± JITTER_MS — unique per device
     so all devices are unsynchronised.
     """
-    device_type  = device_id.split("_")[2]
+    device_type  = _device_type(device_id)
     tick_ms      = BASE_TICK_MS + random.randint(-JITTER_MS, JITTER_MS)
     tick_s       = tick_ms / 1000
 
@@ -60,10 +65,12 @@ async def simulate_device(
     while True:
         try:
             metrics = state.next()
-
             if metrics is None:
                 # dropout scenario — device is silent this tick
                 logger.debug("%s is in dropout window, skipping tick", device_id)
+            elif "_malformed" in metrics:
+                await producer.send(device_id, device_type, metrics["_malformed"])
+                # await producer.send(device_id, device_type, value)
             else:
                 payload   = _build_payload(device_id, dict(metrics), scenario)
                 is_dup    = payload.pop("_duplicate", False)
@@ -78,5 +85,10 @@ async def simulate_device(
 
         except Exception as exc:
             logger.error("Unhandled error in device loop %s: %s", device_id, exc)
+            await producer.send(device_id, "failures", {
+                "device_id":   device_id,
+                "error":       str(exc),
+                "scenario":    scenario,
+            })
 
         await asyncio.sleep(tick_s)
