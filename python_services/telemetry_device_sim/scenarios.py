@@ -22,7 +22,6 @@ def _baseline(device_type: str) -> dict:
 def _malformed_baseline(device_type: str) -> dict:
     """Generate a malformed payload — rotates through different failure types."""
     kind = random.randint(0, 2)
-    malformed_metrics = {}
     if kind == 0:
         # missing metrics key entirely
         return {

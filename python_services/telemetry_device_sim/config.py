@@ -54,12 +54,12 @@ DEGRADATION = {
     "CHIL": {
         "metric":     "coolant_pressure_psi",
         "direction":  "down",        # pressure drops
-        "over_ticks": 6000,          # ~20 minutes at 200ms per tick
+        "over_ticks": 1500,          # ~20 minutes at 200ms per tick
     },
     "PUMO": {
         "metric":     "temperature_c",
         "direction":  "up",          # temperature rises
-        "over_ticks": 6000,
+        "over_ticks": 1500,
     },
 }
 
@@ -68,19 +68,19 @@ SPIKE = {
     "CHIL": {
         "metric":       "coolant_pressure_psi",
         "spike_value":  170.0,       # well above 140 threshold
-        "duration_ticks": 30,
-        "every_ticks":  300,         # spike every ~60 seconds
+        "duration_ticks": 75,
+        "every_ticks":  150,         # spike every ~60 seconds
     },
     "PUMO": {
         "metric":       "vibration_rms_mm_s",
         "spike_value":  9.5,
-        "duration_ticks": 30,
-        "every_ticks":  300,
+        "duration_ticks": 75,
+        "every_ticks":  150,
     },
 }
 
 # ── Sensor dropout config ─────────────────────────────────────────────────────
 DROPOUT = {
-    "silence_ticks_min": 300,    # minimum silence ~60 seconds
-    "silence_ticks_max": 600,    # maximum silence ~120 seconds
+    "silence_ticks_min": 150,    # minimum silence ~60 seconds
+    "silence_ticks_max": 300,    # maximum silence ~120 seconds
 }

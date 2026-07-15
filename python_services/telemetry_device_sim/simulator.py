@@ -69,8 +69,9 @@ async def simulate_device(
                 # dropout scenario — device is silent this tick
                 logger.debug("%s is in dropout window, skipping tick", device_id)
             elif "_malformed" in metrics:
-                await producer.send(device_id, device_type, metrics["_malformed"])
-                # await producer.send(device_id, device_type, value)
+                await producer.send(device_id, "failures", metrics["_malformed"])
+                await asyncio.sleep(10)
+
             else:
                 payload   = _build_payload(device_id, dict(metrics), scenario)
                 is_dup    = payload.pop("_duplicate", False)

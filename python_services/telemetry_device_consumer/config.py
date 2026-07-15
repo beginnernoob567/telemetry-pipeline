@@ -8,6 +8,7 @@ CONSUMER_GROUP_ID  = os.getenv("CONSUMER_GROUP_ID", "telemetry-consumer-group")
 TOPICS = [
     "telemetry.cooling-units",
     "telemetry.pump-motors",
+    "telemetry.failures"
 ]
 
 # ── TimescaleDB ───────────────────────────────────────────────────────────────

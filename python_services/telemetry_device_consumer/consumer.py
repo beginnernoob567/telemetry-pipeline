@@ -8,7 +8,7 @@ from typing import defaultdict
 
 sys.path.insert(0, os.path.join(os.path.dirname(__file__), '..', 'common'))
 
-from aiokafka import AIOKafkaConsumer, AIOKafkaProducer
+from aiokafka import AIOKafkaConsumer
 import asyncpg
 
 from config import (
@@ -33,7 +33,6 @@ class TelemetryConsumer:
         self.pool     = pool
         self.analyser = Analyser()
         self._consumer: AIOKafkaConsumer | None = None
-        self._producer: AIOKafkaProducer | None = None
         self._clean_streak: dict[str, int] = defaultdict(int)
 
     async def start(self):
@@ -45,18 +44,9 @@ class TelemetryConsumer:
             auto_offset_reset="earliest",
             value_deserializer=lambda v: v, # raw bytes — we decode in validator
         )
-        self._producer = AIOKafkaProducer(
-            bootstrap_servers=REDPANDA_BROKERS,
-            value_serializer=lambda v: json.dumps(v).encode("utf-8"),
-            key_serializer=lambda k: k.encode("utf-8") if k else None,
-            acks="all",
-            retry_backoff_ms=200,
-            request_timeout_ms=10_000,
-        )
         await self._consumer.start()
-        await self._producer.start()
         logger.info(
-            "Consumer and Producer started | brokers=%s | topics=%s",
+            "Consumer started | brokers=%s | topics=%s",
             REDPANDA_BROKERS, TOPICS,
         )
 
@@ -64,9 +54,6 @@ class TelemetryConsumer:
         if self._consumer:
             await self._consumer.stop()
             logger.info("Consumer stopped")
-        if self._producer:
-            await self._producer.stop()
-            logger.info("Producer stopped")
 
     async def run(self):
         """Main consume loop — runs indefinitely."""
@@ -81,15 +68,6 @@ class TelemetryConsumer:
 
         if not result.is_valid:
             await insert_failure(self.pool, result.failure)
-            await self._producer.send_and_wait(
-                "telemetry.failures",
-                value={
-                    "raw_payload":   raw.decode("utf-8", errors="replace"),
-                    "error_reason":  result.failure.error_reason,
-                    "source_topic":  message.topic,
-                    "source_offset": message.offset,
-                }
-            )
             await self._consumer.commit()
             return
 
