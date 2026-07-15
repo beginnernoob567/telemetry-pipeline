@@ -296,3 +296,14 @@ and consumer do not start until Redpanda and TimescaleDB are ready.
 - **Horizontal scaling** — the consumer is a single process. Scaling to multiple
   consumers with Redpanda consumer groups is architecturally supported (partition
   by device_id already enables this) but not implemented here.
+- **DLQ for failues** — currently if there is any failure in cosumer service, maybe
+  the db write failed or any other reason, we currently aren't capturing that,
+  only failures in telemetry.failure are put to failure database,
+  **_solution_** a fix for this is to add another topic _telemetry.dlq_
+  incase the db is down and write fails we can keep a retry
+  count and once it reaches 3 retries, we move it to the dlq
+  topic. This would avoid looping and can be used for further
+  investigation. So failures in simulation go to telemetry.failures,
+  failures in consumer go to telemetry.failures with the retry count,
+  if in the next retry it passes, we write it to failures db and commit
+  redpanda, if it still fails after 3 attempts, we move it to dlq.
