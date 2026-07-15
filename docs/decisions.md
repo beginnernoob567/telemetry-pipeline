@@ -8,7 +8,7 @@ this is where we explain what we chose and why.
 
 ## 1. Device fleet — what we simulate and why
 
-**Decision:** 10 devices — 6 chillers and 4 pump-motors — all located in a
+**Decision:** 11 devices — 7 chillers and 4 pump-motors — all located in a
 simulated Bangalore data centre (`IN_BLR_*` naming convention).
 
 **Reasoning:**
@@ -25,6 +25,7 @@ failure.
 
 ```
 IN_BLR_CHIL_01 through IN_BLR_CHIL_06   (chillers)
+IN_BLR_CHIL_07 → for unprocessable messages, goes to failures table.
 IN_BLR_PUMO_01 through IN_BLR_PUMO_04   (pump-motors)
 ```
 
@@ -284,10 +285,6 @@ and consumer do not start until Redpanda and TimescaleDB are ready.
 ---
 
 ## 10. What we deliberately did not build
-
-The assignment says "you do not have to handle all of these." In the interest of
-doing a few things well rather than many things partially, we explicitly
-descoped:
 
 - **Machine learning model persistence** — the Isolation Forest model is held
   in memory and rebuilt on restart. Persisting it to disk (via joblib or
