@@ -1,3 +1,31 @@
+## Project Problem Statement: Real-Time Equipment Telemetry Monitoring and Anomaly Detection System
+
+### **Context**
+
+In modern industrial and data center environments, operators manage a fleet of complex physical assets (e.g., cooling units, pumps, motors). Each asset continuously generates thousands of high-frequency telemetry readings—such as temperature, vibration, pressure, and power draw. Because it is humanly impossible for operators to monitor this massive influx of raw data in real time, software must act as the first line of defense to process, store, and interpret these signals.
+
+### **The Core Problem**
+
+Raw sensor data is inherently messy, noisy, and prone to anomalies (e.g., out-of-order packets, missing values, temporary spikes, or complete sensor failures). Simply flooding an operator with raw metrics or naive threshold alerts leads to "alarm fatigue" and masks genuine, impending equipment failures.
+
+There is a critical need for an automated service that can ingest continuous, simulated streams of noisy telemetry data, store it efficiently, and apply intelligent analysis to surface only the equipment that genuinely **needs attention**—specifically identifying assets heading toward failure before a critical breakdown occurs.
+
+### **Objectives & Scope**
+
+To solve this problem, the system must implement three core capabilities:
+
+1. **Ingestion & Resilient Storage:** Build a scalable service to consume continuous stream readings structured as `(device_id, metric, value, timestamp)`. The system must elegantly handle data imperfections (noise, gaps, or duplicates).
+2. **Predictive & Context-Aware Analysis:** Define and implement data-driven rules or algorithms to differentiate between harmless noise (e.g., a single spike) and true indicators of degradation (e.g., sustained drift or escalating vibration).
+3. **Actionable Operator Interface:** Design an intuitive dashboard or interface that surfaces the health state of the fleet. Rather than displaying raw data dumps, it must prioritize actionable insights, highlighting _why_ a device needs attention so operators can intervene early.
+
+---
+
+### **Key Technical Challenges to Address**
+
+- **Signal vs. Noise:** Filtering out transient spikes while capturing gradual, catastrophic trends (e.g., a bearing slowly wearing out over time).
+- **Sensor vs. Equipment Failure:** Distinguishing between a faulty sensor reporting `0` or missing data, versus an actual hardware failure.
+- **Data Ingestion Integrity:** Handling out-of-order or duplicate timestamps gracefully without corrupting the historical timeline.
+
 ## How to run
 
 **Prerequisites:** Docker and Docker Compose.
