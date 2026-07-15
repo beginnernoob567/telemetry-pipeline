@@ -96,42 +96,42 @@ services:
       - telemetry-net
     restart: on-failure
 
-  # # ── Consumer ──────────────────────────────────────────────────────────────
-  # consumer:
-  #   build:
-  #     context: ./python_services/telemetry_device_consumer
-  #     dockerfile: Dockerfile
-  #   container_name: consumer
-  #   env_file: .env
-  #   environment:
-  #     REDPANDA_BROKERS: redpanda:9092
-  #     POSTGRES_HOST: timescaledb
-  #   depends_on:
-  #     redpanda-init:
-  #       condition: service_completed_successfully
-  #     timescaledb:
-  #       condition: service_healthy
-  #   networks:
-  #     - telemetry-net
-  #   restart: on-failure
+  # ── Consumer ──────────────────────────────────────────────────────────────
+  consumer:
+    build:
+      context: ./python_services
+      dockerfile: Dockerfile
+    container_name: consumer
+    env_file: .env
+    environment:
+      REDPANDA_BROKERS: redpanda:9092
+      POSTGRES_HOST: timescaledb
+    depends_on:
+      redpanda-init:
+        condition: service_completed_successfully
+      timescaledb:
+        condition: service_healthy
+    networks:
+      - telemetry-net
+    restart: on-failure
 
-  # # ── Streamlit Dashboard ────────────────────────────────────────────────────
-  # dashboard:
-  #   build:
-  #     context: ./python_services/streamlit_dashboard
-  #     dockerfile: Dockerfile
-  #   container_name: dashboard
-  #   env_file: .env
-  #   environment:
-  #     POSTGRES_HOST: timescaledb
-  #   ports:
-  #     - "8501:8501"
-  #   depends_on:
-  #     timescaledb:
-  #       condition: service_healthy
-  #   networks:
-  #     - telemetry-net
-  #   restart: on-failure
+  # ── Streamlit Dashboard ────────────────────────────────────────────────────
+  dashboard:
+    build:
+      context: ./python_services/streamlit_dashboard
+      dockerfile: Dockerfile
+    container_name: dashboard
+    env_file: .env
+    environment:
+      POSTGRES_HOST: timescaledb
+    ports:
+      - "8501:8501"
+    depends_on:
+      timescaledb:
+        condition: service_healthy
+    networks:
+      - telemetry-net
+    restart: on-failure
 
 volumes:
   timescaledb-data:
