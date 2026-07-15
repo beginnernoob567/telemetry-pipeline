@@ -72,17 +72,6 @@ class TelemetryConsumer:
             await self._process(message)
 
     async def _process(self, message):
-        """
-        Full processing pipeline for a single Redpanda message.
-
-        Order:
-          1. Validate
-          2. Write to telemetry (if valid)
-          3. Update device_status last_seen
-          4. Run anomaly detection
-          5. Handle alerts
-          6. Commit offset
-        """
         raw = message.value
 
         # ── Step 1: Validate ──────────────────────────────────────────────────
@@ -106,7 +95,7 @@ class TelemetryConsumer:
 
         # ── Step 2: Write telemetry ───────────────────────────────────────────
         try:
-            await insert_telemetry(self.pool, reading)
+            inserted = await insert_telemetry(self.pool, reading)
         except Exception as exc:
             logger.error(
                 "Failed to write telemetry for %s: %s",
@@ -116,16 +105,19 @@ class TelemetryConsumer:
             return
 
         # ── Step 3: Update device last_seen ───────────────────────────────────
-        # Use update_last_seen, NOT upsert_device_status("healthy").
-        # We must not reset an "unhealthy" or "disconnected" status here —
-        # that would mask alerts on every incoming reading before anomaly
-        # detection (Step 4) gets a chance to re-flag the device.
+        # runs regardless of duplicate status — a duplicate still proves
+        # the device is alive
         await update_last_seen(
             pool=self.pool,
             device_id=reading.device_id,
             device_type=reading.device_type,
             now=reading.timestamp,
         )
+
+        if not inserted:
+            logger.debug("Duplicate reading discarded for %s", reading.device_id)
+            await self._consumer.commit()
+            return
 
         # ── Step 4: Anomaly detection ─────────────────────────────────────────
         anomalies = self.analyser.analyse(
@@ -149,7 +141,6 @@ class TelemetryConsumer:
                 await self._check_resolutions(reading)
 
         # ── Step 6: Commit offset ─────────────────────────────────────────────
-        # only reached if write + analysis both succeeded
         await self._consumer.commit()
 
     async def _check_resolutions(self, reading):

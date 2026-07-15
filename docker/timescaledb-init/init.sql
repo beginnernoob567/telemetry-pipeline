@@ -33,6 +33,8 @@ CREATE INDEX IF NOT EXISTS idx_telemetry_device_type
 CREATE INDEX IF NOT EXISTS idx_telemetry_metrics
     ON telemetry USING GIN (metrics);
 
+ALTER TABLE telemetry ADD CONSTRAINT uq_telemetry_reading UNIQUE (device_id, timestamp, metrics);
+
 -- ============================================================================
 -- 🚨 INCIDENT LOGS: ALERT HISTORY
 -- ============================================================================

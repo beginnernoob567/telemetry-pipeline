@@ -184,20 +184,15 @@ def get_device_status(device_id: str) -> dict | None:
 
 # ── Failures ──────────────────────────────────────────────────────────────────
 
-def get_recent_failures(limit: int = 20) -> list[dict]:
+def get_recent_failures(limit: int = 20, offset: int = 0) -> list[dict]:
     return fetch(
         """
-        SELECT
-            failure_id,
-            raw_payload,
-            error_reason,
-            received_at,
-            resolved
+        SELECT failure_id, raw_payload, error_reason, received_at, resolved
         FROM failures
         ORDER BY received_at DESC
-        LIMIT %s
+        LIMIT %s OFFSET %s
         """,
-        (limit,),
+        (limit, offset),
     )
 
 

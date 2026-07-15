@@ -133,9 +133,12 @@ def render(on_device_select):
 
     # ── Pipeline failures ─────────────────────────────────────────────────────
     st.subheader("⚠️ Pipeline Failures (DLQ)")
-
-    failures = get_recent_failures()
-
+    
+    if "dlq_page" not in st.session_state:
+        st.session_state.dlq_page = 0
+    
+    failures = get_recent_failures(limit=20, offset=st.session_state.dlq_page * 20)
+    
     if not failures:
         st.success("No pipeline failures.")
     else:
@@ -145,9 +148,17 @@ def render(on_device_select):
                 expanded=False,
             ):
                 st.code(f["raw_payload"][:500], language="json")
-                st.caption(
-                    f"Resolved: {'✅' if f['resolved'] else '❌'}"
-                )
+                st.caption(f"Resolved: {'✅' if f['resolved'] else '❌'}")
+    
+        c1, c2 = st.columns(2)
+        with c1:
+            if st.button("← Previous") and st.session_state.dlq_page > 0:
+                st.session_state.dlq_page -= 1
+                st.rerun()
+        with c2:
+            if st.button("Next →") and len(failures) == 20:
+                st.session_state.dlq_page += 1
+                st.rerun()
 
 
 def _format_duration(seconds: float) -> str:
@@ -166,4 +177,4 @@ def _fmt_time(ts) -> str:
         return "—"
     if hasattr(ts, "strftime"):
         return ts.strftime("%H:%M:%S")
-    return str(ts)
+    return str(ts)  

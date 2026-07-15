@@ -38,13 +38,15 @@ async def insert_telemetry(
 ) -> None:
     """Insert a single enriched reading into the telemetry hypertable."""
     import json
+    result = None
     async with pool.acquire() as conn:
-        await conn.execute(
+        result = await conn.execute(
             """
             INSERT INTO telemetry
                 (timestamp, device_id, country, city,
                  device_type, unit_id, metrics, scenario)
             VALUES ($1, $2, $3, $4, $5, $6, $7, $8)
+            ON CONFLICT (device_id, timestamp, metrics) DO NOTHING
             """,
             reading.timestamp,
             reading.device_id,
@@ -55,6 +57,7 @@ async def insert_telemetry(
             json.dumps(reading.metrics),
             reading.scenario,
         )
+    return result != "INSERT 0"
 
 
 # ── Device status ─────────────────────────────────────────────────────────────
