@@ -1,4 +1,4 @@
-# common/device_utils.py
+#device_utils.py
 import json
 import logging
 from datetime import datetime, timezone

@@ -99,7 +99,7 @@ services:
   # ── Consumer ──────────────────────────────────────────────────────────────
   consumer:
     build:
-      context: ./python_services
+      context: ./python_services/telemetry_device_consumer
       dockerfile: Dockerfile
     container_name: consumer
     env_file: .env

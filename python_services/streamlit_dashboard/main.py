@@ -15,7 +15,7 @@ st.set_page_config(
 
 # ── Auto-refresh ──────────────────────────────────────────────────────────────
 st_autorefresh(
-    interval=DASHBOARD_REFRESH_SECONDS * 1000,  # milliseconds
+    interval=DASHBOARD_REFRESH_SECONDS * 5000,  # milliseconds
     key="autorefresh",
 )
 

@@ -6,8 +6,8 @@ REDPANDA_BROKERS   = os.getenv("REDPANDA_BROKERS", "localhost:9092")
 CONSUMER_GROUP_ID  = os.getenv("CONSUMER_GROUP_ID", "telemetry-consumer-group")
 
 TOPICS = [
-    "telemetry/cooling-units",
-    "telemetry/pump-motors",
+    "telemetry.cooling-units",
+    "telemetry.pump-motors",
 ]
 
 # ── TimescaleDB ───────────────────────────────────────────────────────────────
