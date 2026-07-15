@@ -54,7 +54,7 @@ DEGRADATION = {
     "CHIL": {
         "metric":     "coolant_pressure_psi",
         "direction":  "down",        # pressure drops
-        "over_ticks": 1500,          # ~20 minutes at 200ms per tick
+        "over_ticks": 1500,          
     },
     "PUMO": {
         "metric":     "temperature_c",

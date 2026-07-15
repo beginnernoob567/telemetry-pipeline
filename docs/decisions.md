@@ -8,8 +8,8 @@ this is where we explain what we chose and why.
 
 ## 1. Device fleet — what we simulate and why
 
-**Decision:** 11 devices — 7 chillers and 4 pump-motors — all located in a
-simulated Bangalore data centre (`IN_BLR_*` naming convention).
+**Decision:** 11 devices — 6 chillers and 4 pump-motors — only 10 emit real telemetry — "CHIL_07" is a dedicated malformed-payload generator - all located in a
+simulated Bangalore data centre (`IN_BLR*\*` naming convention).
 
 **Reasoning:**
 The assignment says "keep the fleet small — a handful of devices with a few
@@ -138,8 +138,7 @@ assignment's hint about "brief spikes that correct themselves."
 
 ### Layer 3: Isolation Forest (scikit-learn)
 
-Applied once a device has at least 50 readings. Trained on the multivariate
-feature vector `[metric_1, metric_2, metric_3]` for that device type.
+Applied once a device has at least 50 readings trained per individual device.
 
 Isolation Forest detects anomalies that no single metric reveals alone — for
 example, a pump-motor running at normal temperature but with elevated vibration
@@ -167,14 +166,14 @@ the screen recording and for showing the detection logic actually works.
 
 **Scenarios implemented:**
 
-| Scenario              | Description                                                           |
-| --------------------- | --------------------------------------------------------------------- |
-| `healthy`             | Values within normal range, small Gaussian noise                      |
-| `gradual_degradation` | One metric drifts slowly toward (and past) threshold over ~20 minutes |
-| `sudden_spike`        | A metric jumps to a critical value for 1–2 readings, then recovers    |
-| `sensor_dropout`      | Readings stop arriving for a device for 60–120 seconds                |
-| `out_of_order`        | Messages arrive with timestamps slightly in the past                  |
-| `duplicate`           | The same reading is published twice                                   |
+| Scenario              | Description                                                          |
+| --------------------- | -------------------------------------------------------------------- |
+| `healthy`             | Values within normal range, small Gaussian noise                     |
+| `gradual_degradation` | One metric drifts slowly toward (and past) threshold over ~5 minutes |
+| `sudden_spike`        | A metric jumps to a critical value for 75 readings, then recovers    |
+| `sensor_dropout`      | Readings stop arriving for a device for 30–60 seconds                |
+| `out_of_order`        | Messages arrive with timestamps slightly in the past                 |
+| `duplicate`           | The same reading is published twice                                  |
 
 Each device is assigned a scenario at startup. Some devices stay healthy
 throughout to make the alert panel meaningful — not everything should be on fire.

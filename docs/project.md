@@ -4,7 +4,7 @@ A service that ingests real-time sensor data from a fleet of industrial devices,
 
 ## What it does
 
-A simulated fleet of 11 devices — 7 chillers and 4 pump-motors in a data centre — continuously emit sensor readings. The pipeline ingests those readings, stores them, runs anomaly detection, and presents the operator with a live dashboard showing fleet health and active alerts.
+A simulated fleet of 11 devices — 6 chillers and 4 pump-motors in a data centre — only 10 emit real telemetry — "CHIL_07" is a dedicated malformed-payload generator - continuously emit sensor readings. The pipeline ingests those readings, stores them, runs anomaly detection, and presents the operator with a live dashboard showing fleet health and active alerts.
 
 The core question the service answers: **which devices need attention right now, and why?**
 
@@ -105,7 +105,6 @@ Intentional descoping — see [`docs/decisions.md §10`](docs/decisions.md) for 
 Found during review, not yet fixed — noted here rather than silently left out:
 
 - **Out-of-order readings aren't re-sorted before analysis.** They're stored with the correct timestamp, but the analyser's rolling window is ordered by arrival, so a reading that arrives a few seconds late is treated as the most recent one for z-score/Isolation Forest purposes. For the scale of lateness this pipeline simulates (a few seconds), the effect on the rolling baseline is negligible — but it's a real simplification, not a solved problem.
-- **Isolation Forest alerts store a comma-joined metric list** (e.g. `"vibration_rms_mm_s, temperature_c"`) rather than a single metric name, since a multivariate anomaly doesn't map cleanly to one metric. This means Isolation Forest alerts don't currently render as markers on the per-metric charts in the device detail view — they do still appear in the alert history list and the fleet-level active alerts panel.
 
 ---
 
